@@ -14,6 +14,7 @@ import {
   AreaChart,
   Area
 } from 'recharts';
+// Importing sub-components for modular layout and management sections
 import Announcements from '../../components/Announcements';
 import AnnouncementFeed from '../../components/AnnouncementFeed';
 import UserManagement from '../../components/UserManagement';
@@ -36,6 +37,11 @@ import {
   AlertCircle,
   TrendingUp
 } from 'lucide-react';
+/**
+ * DashboardOverview Component:
+ * Presentation component responsible for rendering statistics cards, Recharts data visualizations 
+ * (growth charts & system distribution pie charts), recent projects, and recent assignments.
+ */
 
 const DashboardOverview = ({ stats, recentProjects, departmentOverview, recentAssignments, recentActivity, chartData }) => (
     <div className="space-y-8 w-full max-w-none">
@@ -230,17 +236,23 @@ const DashboardOverview = ({ stats, recentProjects, departmentOverview, recentAs
 
     </div>
 );
+/**
+ * AdminDashboard Container Component:
+ * Handles state management, API synchronization with Axios, error handling,
+ * auto-refresh polling intervals, and nested client-side routing.
+ */
 
 const AdminDashboard = () => {
   const [statsData, setStatsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const location = useLocation();
-
+// Asynchronous Data Fetching & Polling Effect
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setError(null);
+        // GET request to backend admin statistics endpoint with cache-busting timestamp query parameter
         const { data } = await axios.get(`/api/dashboard/admin?t=${Date.now()}`);
         setStatsData(data);
       } catch (err) {
@@ -253,6 +265,8 @@ const AdminDashboard = () => {
 
     const isRoot = location.pathname === '/dashboard/admin' || location.pathname === '/dashboard/admin/';
     fetchStats();
+    // Setup polling interval to refresh stats automatically every 8 seconds if on the root view
+  
 
     let intervalId;
     if (isRoot) {
@@ -260,12 +274,12 @@ const AdminDashboard = () => {
         fetchStats();
       }, 8000);
     }
-
+// Cleanup interval on component unmount or route change to prevent memory leaks
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [location.pathname]);
-
+// Mapping backend data to stats summary array
   const stats = [
     { label: 'Total Departments', value: String(statsData?.totalDepts ?? 0), icon: GraduationCap, color: 'blue' },
     { label: 'Total Projects', value: String(statsData?.totalProjects ?? 0), icon: Folder, color: 'blue' },

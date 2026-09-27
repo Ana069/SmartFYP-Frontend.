@@ -24,10 +24,16 @@ import {
 } from 'lucide-react';
 import DocumentViewerModal from '../components/DocumentViewerModal';
 import { triggerDirectDownload } from '../utils/fileHelpers';
+/**
+ * AnimatedSelect Component:
+ * Custom, accessible dropdown selector featuring Framer Motion micro-interactions,
+ * memory-efficient option deduplication via useMemo, and click-outside event handling.
+ */
 
 const AnimatedSelect = ({ label, value, options, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  // Memoized optimization hook to clean, parse, and remove duplicate filter options
 
   const uniqueOptions = useMemo(() => {
     if (!Array.isArray(options)) return [];
@@ -39,6 +45,7 @@ const AnimatedSelect = ({ label, value, options, onChange }) => {
       return true;
     });
   }, [options]);
+  // Effect hook to handle closing the dropdown menu when clicking outside its container boundary
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -109,8 +116,14 @@ const AnimatedSelect = ({ label, value, options, onChange }) => {
     </div>
   );
 };
+/**
+ * ProjectCard Component:
+ * Presentation card for individual FYP records. Features dynamic banner color generation 
+ * based on string hashing, technology badge clipping, and scroll-triggered entrance animations.
+ */
 
 export const ProjectCard = ({ project, onViewDetails, index = 0 }) => {
+  // Helper function to generate deterministic background gradients based on title length
   const getGradient = (title) => {
     const gradients = [
       'from-blue-600 to-indigo-700',
@@ -208,8 +221,11 @@ export const ProjectCard = ({ project, onViewDetails, index = 0 }) => {
 };
 
 export const ProjectModal = ({ project, onClose }) => {
+  // Local state to manage the document viewer modal (if opened from the component)
   const [viewerDoc, setViewerDoc] = useState({ isOpen: false, fileUrl: '', title: '' });
+  // Return null early if no project data is provided
   if (!project) return null;
+  
 
   return (
     <motion.div 
@@ -540,15 +556,19 @@ export const ProjectModal = ({ project, onClose }) => {
 };
 
 const Projects = () => {
+  // Search query and filter states for filtering the projects gallery
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('All Departments');
   const [selectedTech, setSelectedTech] = useState('All Technologies');
   const [selectedYear, setSelectedYear] = useState('All Years');
+  // State for the currently selected project modal and pagination count
   const [selectedProject, setSelectedProject] = useState(null);
   const [visibleCount, setVisibleCount] = useState(3);
+  // Data fetching states
 
   const [publicProjects, setPublicProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Helper function to fetch public projects from the backend API
 
   const fetchPublicProjects = async () => {
     try {
@@ -561,6 +581,7 @@ const Projects = () => {
       setLoading(false);
     }
   };
+  // Lifecycle hook to load public projects on component mount with memory-leak cleanup
 
   useEffect(() => {
     let isMounted = true;
@@ -579,12 +600,14 @@ const Projects = () => {
     fetch();
     return () => { isMounted = false; };
   }, []);
+  // Memoized extraction of unique departments for the filter dropdown
 
   const departments = useMemo(() => {
     const raw = publicProjects.map(p => p.department?.name).filter(Boolean);
     const unique = Array.from(new Set(raw.map(String)));
     return ["All Departments", ...unique];
   }, [publicProjects]);
+  // Memoized extraction of unique technologies from completed/published projects
 
   const technologies = useMemo(() => {
     const allTechs = publicProjects
@@ -594,6 +617,7 @@ const Projects = () => {
     const unique = Array.from(new Set(allTechs.map(String)));
     return ["All Technologies", ...unique];
   }, [publicProjects]);
+  // Memoized extraction of unique academic years for filtering
 
   const years = useMemo(() => {
     const rawYears = publicProjects
@@ -602,13 +626,13 @@ const Projects = () => {
     const unique = Array.from(new Set(rawYears)).sort();
     return ["All Years", ...unique];
   }, [publicProjects]);
-
+// Memoized filtering logic based on search input, department, technology, and year
   const filteredProjects = useMemo(() => {
     return publicProjects.filter(project => {
       // Only completed or published projects will be shown in the gallery
       const isAvailable = project.status === 'Completed' || project.status === 'Published';
       if (!isAvailable) return false;
-
+// Match search query against title, description, team name, or tech stack
       const matchesSearch = project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            project.teamName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -620,7 +644,9 @@ const Projects = () => {
 
       return matchesSearch && matchesDept && matchesTech && matchesYear;
     });
+  
   }, [publicProjects, searchQuery, selectedDept, selectedTech, selectedYear]);
+  // Slice filtered results for pagination / "View All" functionality
 
   const displayedProjects = filteredProjects.slice(0, visibleCount);
   const hasMore = visibleCount < filteredProjects.length;

@@ -63,7 +63,7 @@ export default defineConfig(({ mode }) => {
       hmr: process.env.DISABLE_HMR !== 'true',
       proxy: {
         '/api': {
-                target: 'https://smartfypproject-production.up.railway.app',
+                target: 'http://localhost:3000',
           changeOrigin: true,
           secure: false,
         }

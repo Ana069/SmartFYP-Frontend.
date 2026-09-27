@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext,useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import toast from 'react-hot-toast';
-import { clearDemoMode } from '../utils/demoMode';
+import { clearDemoMode, isDemoMode } from '../utils/demoMode';
 
 const AuthContext = createContext();
 
@@ -107,8 +106,13 @@ export const AuthProvider = ({ children }) => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        // Don't intercept for the login request itself
-        if ((error.response?.status === 401 || error.response?.status === 403) && !error.config.url.includes('/api/auth/login')) {
+                // Don't intercept for the login request itself, and never force a
+        // logout/redirect while in standalone demo mode.
+        if (
+          (error.response?.status === 401 || error.response?.status === 403) &&
+          !error.config.url.includes('/api/auth/login') &&
+          !isDemoMode()
+        ) {
           logout();
           window.location.href = '/login';
         }
@@ -123,12 +127,14 @@ export const AuthProvider = ({ children }) => {
           else message = "An unexpected error occurred";
         }
         
-        // Skip toast for certain requests and cancelations
+               // Skip toast for certain requests, cancelations, and while running in
+        // standalone demo mode.
         if (
           !axios.isCancel(error) && 
           !error.config?.url?.includes('/api/auth/check') && 
           !error.config?.url?.includes('/api/projects/my-project') &&
-          !isNotificationPoll
+          !isNotificationPoll &&
+          !isDemoMode()
         ) {
            toast.error(message);
         }

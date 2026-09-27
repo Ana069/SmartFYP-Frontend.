@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
@@ -12,8 +13,9 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { getLocalRecommender } from '../utils/localRecommender.js';
 
-// Suggested search prompts rotating pool
+
 const ALL_SUGGESTIONS = [
   "Predictive maintenance for industrial factory devices",
   "Post-quantum security cryptography on IoT wearables",
@@ -74,23 +76,36 @@ const Ideas = () => {
       });
 
       if (resp.data && resp.data.success) {
-        setResults(resp.data.data);
+                  setResults(resp.data.data || []);
         setInferenceTime(resp.data.inferenceTimeMs);
         setModelMetrics(resp.data.metrics);
         setHasSearched(true);
-        toast.success(`Generated projects in ${resp.data.inferenceTimeMs}ms!`);
+        toast.success(`Generated projects in ${resp.data.inferenceTimeMs}ms!`);     
       } else {
         throw new Error('Unsuccessful API response');
       }
     } catch (err) {
-      console.error(err);
-      toast.error('Could not compute project ideas. Make sure datasets exist.');
+      console.warn("Backend offline. Falling back to local offline recommender.");
+      
+      const recommender = getLocalRecommender();
+      const localResult = recommender.recommend({
+        query: interest.trim(),
+        domain,
+        techStack: techStack.trim(),
+        limit
+      });
+
+      setResults(localResult.results);
+      setInferenceTime(localResult.inferenceTimeMs);
+      setModelMetrics(localResult.metrics);
+      setHasSearched(true);
+      toast.success(`Generated offline using local TF-IDF in ${localResult.inferenceTimeMs}ms!`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Run on page load with default general recommendation query
+  
   useEffect(() => {
     const triggerInitial = async () => {
       setLoading(true);
@@ -99,17 +114,31 @@ const Ideas = () => {
           query: "machine learning security",
           limit: 6
         });
-        if (resp.data?.success) {
-          setResults(resp.data.data);
+
+        if (resp.data && resp.data.success) {
+          setResults(resp.data.data || []);
           setInferenceTime(resp.data.inferenceTimeMs);
           setModelMetrics(resp.data.metrics);
+        } else {
+          throw new Error('Unsuccessful API response');
         }
       } catch (err) {
-        console.warn('Initial recommendations load deferred:', err);
+        console.warn("Initial backend load offline. Using local recommender fallback.");
+        
+        const recommender = getLocalRecommender();
+        const localResult = recommender.recommend({
+          query: "machine learning security",
+          limit: 6
+        });
+
+        setResults(localResult.results);
+        setInferenceTime(localResult.inferenceTimeMs);
+        setModelMetrics(localResult.metrics);
       } finally {
         setLoading(false);
       }
     };
+
     triggerInitial();
   }, []);
 

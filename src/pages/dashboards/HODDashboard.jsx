@@ -57,6 +57,7 @@ import {
 } from 'recharts';
 
 const DashboardOverview = ({ stats, statsData, supervisorStats, deptPerformance, recentAssignments, performanceTrend, allProjects, onViewSupervisorTeams, onViewProjectDetails, onViewDoc }) => {
+  // Authentication context and local component states for dashboard UI and interactive features
   const { user } = useAuth();
   const [drilldownSup, setDrilldownSup] = useState(null);
   const [workloadMode, setWorkloadMode] = useState('chart'); // 'chart' | 'matrix'
@@ -64,16 +65,16 @@ const DashboardOverview = ({ stats, statsData, supervisorStats, deptPerformance,
   const [expandedSupId, setExpandedSupId] = useState(null);
   const [nudgeStatus, setNudgeStatus] = useState({}); // { [teamId]: 'idle' | 'nudging' | 'sent' }
   const [facultyNudge, setFacultyNudge] = useState({}); // { [supId]: 'idle' | 'nudging' | 'sent' }
-
+// Normalize project list and determine the active department name based on user context or fallback data
   const deptProjects = allProjects || [];
   const departmentName = statsData?.departmentName || user?.department?.name || (typeof user?.department === 'string' && user.department.length !== 24 ? user.department : "Information Technology");
-
+// Helper function to return dynamic styling and badges based on supervisor group workload
   const getCapacityBadge = (groups) => {
     if (groups <= 1) return { label: 'Flexible Capacity', color: 'bg-sky-50 text-sky-600 border-sky-150' };
     if (groups >= 4) return { label: 'High Allocation', color: 'bg-rose-50 text-rose-600 border-rose-150' };
     return { label: 'Optimal Load', color: 'bg-emerald-50 text-emerald-700 border-emerald-150' };
   };
-
+// Handler to trigger simulated notification/nudge to a student team
   const nudgeTeam = (teamId) => {
     setNudgeStatus(prev => ({ ...prev, [teamId]: 'nudging' }));
     setTimeout(() => {
@@ -88,7 +89,7 @@ const DashboardOverview = ({ stats, statsData, supervisorStats, deptPerformance,
       setFacultyNudge(prev => ({ ...prev, [supId]: 'sent' }));
     }, 1000);
   };
-
+// Handler to trigger simulated notification/nudge to a faculty supervisor
   const toggleSupExpand = (supId) => {
     setExpandedSupId(expandedSupId === supId ? null : supId);
   };
@@ -171,7 +172,7 @@ const DashboardOverview = ({ stats, statsData, supervisorStats, deptPerformance,
           </motion.div>
         ))}
       </div>
-
+{/* Main Grid Container for Dashboard Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Interactive Recent Submissions & Documents Requiring Review */}
         <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden flex flex-col justify-between" id="recent-reviewable-submissions">
